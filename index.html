@@ -1,0 +1,1435 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Synesis XML">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Račun u XML za Synesis">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>Synesis XML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: brand header, one hero capture control, buyer card, then a stack of document "slips" with a status rail that expand in place. Export bar is pinned to the bottom. Mono type carries all data. */
+:root {
+  color-scheme: light;
+  --bg: #eaf0ef;
+  --bg-glow: #d5ebe7;
+  --surface: #ffffff;
+  --ink: #0d1a1c;
+  --muted: #566a6d;
+  --line: #d3dcdb;
+  --accent: #0b6e66;
+  --accent-2: #064e49;
+  --accent-ink: #ffffff;
+  --accent-soft: #d9eeea;
+  --amber: #ffb53d;
+  --ok: #17803f;
+  --warn: #965a00;
+  --err: #c2392b;
+  --ok-soft: #dcf2e3;
+  --warn-soft: #fbecd0;
+  --err-soft: #fbe3df;
+  --shadow: 0 1px 2px rgba(13,26,28,.06), 0 6px 20px rgba(13,26,28,.07);
+  --code-bg: #0f1d20;
+  --code-ink: #d6e3e1;
+  --code-tag: #7db4ff;
+  --code-attr: #e3bf7a;
+  --code-val: #97d8a3;
+  --code-dim: #6f8588;
+  --font-display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a1214; --bg-glow: #0f2a2a; --surface: #121d20; --ink: #e5eeed; --muted: #8fa3a6; --line: #24353a;
+    --accent: #52c2b5; --accent-2: #2e9488; --accent-ink: #03201c; --accent-soft: #123430;
+    --ok: #4cc38a; --warn: #f0b429; --err: #ff7b6b;
+    --ok-soft: #13301f; --warn-soft: #33290d; --err-soft: #3a1c19;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --code-bg: #070d0f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a1214; --bg-glow: #0f2a2a; --surface: #121d20; --ink: #e5eeed; --muted: #8fa3a6; --line: #24353a;
+  --accent: #52c2b5; --accent-2: #2e9488; --accent-ink: #03201c; --accent-soft: #123430;
+  --ok: #4cc38a; --warn: #f0b429; --err: #ff7b6b;
+  --ok-soft: #13301f; --warn-soft: #33290d; --err-soft: #3a1c19;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --code-bg: #070d0f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg) radial-gradient(900px 340px at 50% -80px, var(--bg-glow), transparent 70%) no-repeat; color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(18px + env(safe-area-inset-top, 0px)) 0;
+}
+.app { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; min-height: 100vh; min-height: 100dvh; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo { width: 46px; height: 46px; flex: none; border-radius: 11px; box-shadow: 0 2px 10px rgba(6,78,73,.35); }
+.wm { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 27px; line-height: 1; letter-spacing: -.03em; white-space: nowrap; }
+.wm .br { font-family: var(--font-mono); font-weight: 500; font-size: .7em; color: var(--accent); letter-spacing: 0; position: relative; top: -.04em; }
+.wm .br.l { margin-right: .12em; } .wm .br.r { margin-left: .12em; }
+.sub { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button, .btn { font: inherit; }
+.ic { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 52px; padding: 0 18px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer; text-align: center;
+  -webkit-tap-highlight-color: transparent; transition: transform .08s ease, background-color .15s ease, border-color .15s ease;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { background: var(--accent-2); border-color: var(--accent-2); }
+.btn.small { min-height: 42px; padding: 0 14px; font-size: 14px; border-radius: 10px; font-weight: 500; }
+.btn.small.primary { font-weight: 600; }
+.btn.danger { color: var(--err); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:active:not(:disabled) { transform: translateY(1px) scale(.995); }
+.btn:focus-visible, .sum:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .del:focus-visible, .iconbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.iconbtn { flex: none; width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); -webkit-tap-highlight-color: transparent; }
+.iconbtn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+
+/* capture */
+.hero { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.shoot {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; min-height: 92px; padding: 14px 20px; border-radius: 20px; cursor: pointer;
+  color: var(--accent-ink); background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  box-shadow: 0 10px 28px -8px rgba(6,78,73,.55), inset 0 1px 0 rgba(255,255,255,.18);
+  -webkit-tap-highlight-color: transparent; transition: transform .08s ease, box-shadow .15s ease;
+}
+.shoot:active { transform: translateY(1px) scale(.992); }
+.shoot .ring { width: 58px; height: 58px; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+.shoot .ring .ic { width: 30px; height: 30px; stroke-width: 1.7; }
+.shoot b { display: block; font-family: var(--font-display); font-size: 21px; letter-spacing: -.01em; line-height: 1.1; }
+.shoot small { display: block; margin-top: 3px; font-size: 13px; opacity: .85; }
+.alt { min-height: 58px; border-radius: 16px; box-shadow: var(--shadow); }
+.alt .ic { color: var(--accent); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow); }
+.panel h2 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.panel .ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pill { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+select { font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; width: 100%; min-width: 0; min-height: 48px; }
+.buyer { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); }
+.buyer .bh { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.buyer .lbl { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.buyer .ba { display: flex; gap: 6px; }
+.chipbtn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 13.5px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.chipbtn .ic { width: 16px; height: 16px; stroke-width: 2; }
+.chipbtn.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.buyer .bm { font-size: 13px; color: var(--muted); min-height: 1.3em; }
+.note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+.note.info { background: var(--accent-soft); color: var(--accent); }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.grid .wide { grid-column: 1 / -1; }
+.fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fld > span { font-size: 12px; color: var(--muted); }
+input[type=text], input[type=password], input[type=date], input[type=time], textarea {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; width: 100%; min-width: 0; min-height: 46px;
+}
+input.mono, textarea.mono { font-family: var(--font-mono); font-size: 15px; }
+textarea { resize: vertical; min-height: 66px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.msgs:empty { display: none; }
+.msgs li { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+.msgs li.e { background: var(--err-soft); color: var(--err); }
+.msgs li.w { background: var(--warn-soft); color: var(--warn); }
+.savebtn { min-height: 50px; padding: 0 20px; border-radius: 14px; font-size: 16px; }
+.savebtn .ic { width: 20px; height: 20px; }
+
+ol.how { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+ol.how li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; }
+ol.how .n { width: 32px; height: 32px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 500; font-size: 15px; }
+ol.how b { font-weight: 600; }
+ol.how span.d { display: block; color: var(--muted); font-size: 14px; }
+
+.listhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 2px 2px -6px; }
+.lh { display: flex; gap: 14px; }
+.linkbtn.muted { color: var(--muted); }
+.linkbtn { background: none; border: 0; color: var(--err); font-size: 14px; font-weight: 500; min-height: 40px; padding: 0 4px; cursor: pointer; text-transform: none; letter-spacing: 0; font-family: var(--font-body); }
+ul#list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--line); transition: background-color .2s ease; }
+.card[data-st="ok"]::before { background: var(--ok); }
+.card[data-st="warn"]::before { background: var(--warn); }
+.card[data-st="err"]::before { background: var(--err); }
+.card[data-st="busy"]::before { background: var(--accent); }
+.head { display: flex; align-items: stretch; }
+.head .sum { flex: 1; min-width: 0; }
+.sum { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 12px 12px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
+.thw { position: relative; display: block; width: 56px; height: 72px; }
+.no { position: absolute; left: -8px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 500; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--surface); }
+.th { width: 56px; height: 72px; object-fit: cover; object-position: top; border-radius: 5px; border: 1px solid var(--line); background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.14); }
+.meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.meta b { font-weight: 600; font-size: 16px; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.meta small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta small.dim { opacity: .85; }
+.right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.amt { font-weight: 500; font-size: 17px; white-space: nowrap; letter-spacing: -.01em; }
+.chip { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.err { background: var(--err-soft); color: var(--err); }
+.chip.busy { background: var(--accent-soft); color: var(--accent); }
+.spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: sp .8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } .ed, .card { animation: none !important; } }
+.del { flex: none; width: 52px; border: 0; border-left: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; -webkit-tap-highlight-color: transparent; }
+.del:active, .del:hover { color: var(--err); background: var(--err-soft); }
+.del .ic { width: 20px; height: 20px; }
+.ed { border-top: 1px solid var(--line); padding: 16px 14px 18px 18px; display: flex; flex-direction: column; gap: 20px; animation: rise .18s ease-out; }
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec > h3 { margin: 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.iss { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.iss:empty { display: none; }
+.iss li { font-size: 14px; padding: 9px 11px; border-radius: 10px; }
+.iss li.e { background: var(--err-soft); color: var(--err); }
+.iss li.w { background: var(--warn-soft); color: var(--warn); }
+.iss li.i { background: var(--accent-soft); color: var(--accent); }
+.pages { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.pg { position: relative; flex: none; }
+.pg img { height: 96px; width: auto; border-radius: 5px; border: 1px solid var(--line); display: block; cursor: zoom-in; }
+.pg button { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.line { border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+.line .grid { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+.line input[type=text], .line textarea { background: var(--surface); }
+.line-head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.line-head button { background: none; border: 0; color: var(--err); font-size: 14px; min-height: 36px; padding: 0 6px; cursor: pointer; font-family: var(--font-body); }
+.tot { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; font-size: 14px; padding: 14px; background: var(--bg); border-radius: 14px; }
+.tot .l { color: var(--muted); }
+.tot .v { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tot .sep { grid-column: 1 / -1; border-top: 1px dashed var(--line); margin: 4px 0; }
+.tot .big { font-weight: 600; font-size: 18px; color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+pre.code { margin: 0; padding: 14px; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; overflow-x: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; max-height: 420px; overflow-y: auto; tab-size: 2; }
+pre.code .t { color: var(--code-tag); } pre.code .a { color: var(--code-attr); } pre.code .v { color: var(--code-val); } pre.code .d { color: var(--code-dim); }
+.bar {
+  position: sticky; bottom: 0; margin-top: auto; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 84%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3);
+  border-top: 1px solid var(--line);
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.bar-in { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+.bar-info { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.3; }
+.bar-info b { color: var(--ink); font-weight: 600; font-family: var(--font-mono); }
+.bar .btn { flex: none; }
+.bar .btn.primary { min-height: 52px; padding: 0 20px; box-shadow: 0 8px 20px -8px rgba(6,78,73,.6); }
+.bar .btn.cam { min-width: 52px; padding: 0 14px; }
+.viewer { position: fixed; inset: 0; z-index: 40; background: rgba(5,10,12,.97); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px)); color: #e5eeed; font-family: var(--font-mono); font-size: 13px; }
+.vbar .vb { display: flex; gap: 8px; }
+.vbar button { min-height: 46px; min-width: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid #2c3d42; background: #14232a; color: #e5eeed; font: inherit; font-size: 18px; cursor: pointer; }
+.vscroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; background: #0a1214; }
+.vscroll img { display: block; width: 100%; height: auto; max-width: none; background: #fff; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 32px); background: var(--ink); color: var(--bg); padding: 11px 16px; border-radius: 14px; font-size: 14px; z-index: 50; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.toast button { background: none; border: 0; color: var(--accent-soft); font-weight: 600; font-size: 14px; min-height: 32px; padding: 0 4px; cursor: pointer; text-decoration: underline; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast button { color: var(--accent-2); } }
+:root[data-theme="dark"] .toast button { color: var(--accent-2); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14a89c"/><stop offset="1" stop-color="#054640"/></linearGradient><radialGradient id="lh" cx=".25" cy=".12" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="1024" height="1024" rx="232" fill="url(#lg)"/><rect width="1024" height="1024" rx="232" fill="url(#lh)"/><g transform="translate(-80 22)"><path d="M286 150H666V758L628 796 590 758 552 796 514 758 476 796 438 758 400 796 362 758 324 796 286 758Z" fill="#fbfdfc" stroke="#fbfdfc" stroke-width="20" stroke-linejoin="round"/><rect x="336" y="212" width="190" height="34" rx="17" fill="#0b6e66"/><rect x="336" y="290" width="280" height="22" rx="11" fill="#cde3df"/><rect x="336" y="340" width="236" height="22" rx="11" fill="#cde3df"/><rect x="336" y="390" width="258" height="22" rx="11" fill="#cde3df"/><path d="M336 462H616" stroke="#b5cfca" stroke-width="8" stroke-dasharray="4 18" stroke-linecap="round"/><rect x="336" y="500" width="110" height="26" rx="13" fill="#9dbfb9"/><rect x="482" y="494" width="134" height="38" rx="14" fill="#0d1a1c"/><rect x="440" y="560" width="380" height="270" rx="74" fill="#ffb53d"/><path d="M640 636 590 695 640 754M780 636 830 695 780 754M728 626 694 764" fill="none" stroke="#0d1a1c" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" transform="translate(-80 0)"/></g></svg>
+      <div>
+        <h1 class="wm"><span class="br l" aria-hidden="true">&lt;</span>Synesis XML<span class="br r" aria-hidden="true">/&gt;</span></h1>
+        <p class="sub">Račun u XML za Synesis</p>
+      </div>
+    </div>
+    <button class="iconbtn" id="btnSettings" type="button" aria-label="Postavke" aria-expanded="false" aria-controls="settings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
+  </header>
+
+  <section class="panel" id="settings" hidden>
+    <div class="ph"><h2>Postavke</h2></div>
+    <div class="grid">
+      <label class="fld wide"><span>Anthropic API ključ</span><input type="password" id="k-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-..."></label>
+      <label class="fld wide"><span>Model</span><input type="text" id="k-model" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    </div>
+    <p class="hint">Ključ se sprema samo na ovom uređaju i šalje samo Anthropicu. Svako čitanje računa plaća se prema potrošnji.</p>
+    <label class="check"><input type="checkbox" id="b-attach"> Priloži sliku računa unutar XML-a</label>
+    <label class="check"><input type="checkbox" id="b-enhance"> Poboljšaj sliku prije čitanja (izreži i pojačaj kontrast)</label>
+    <div class="actions"><span class="hint" id="supCnt"></span><button class="btn small danger" id="btnSupClear" type="button">Zaboravi dobavljače</button></div>
+  </section>
+
+  <section class="hero">
+    <label class="shoot" for="camIn"><span class="ring"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span><b>Slikaj račun</b><small>Svaki račun posebno, po redu</small></span></label>
+    <label class="btn alt" for="galIn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4 4 3 3-2 4 3"/></svg>Galerija</label>
+    <label class="btn alt" for="pdfIn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 13h5M10 17h5"/></svg>PDF</label>
+    <input class="vh" type="file" id="camIn" accept="image/*" capture="environment">
+    <input class="vh" type="file" id="galIn" accept="image/*" multiple>
+    <input class="vh" type="file" id="pdfIn" accept="application/pdf,.pdf">
+    <input class="vh" type="file" id="pageIn" accept="image/*">
+  </section>
+
+  <section class="buyer" aria-label="Kupac">
+    <div class="bh">
+      <label class="lbl" for="buyerSel">Kupac</label>
+      <div class="ba">
+        <button class="chipbtn" id="btnBuyerNew" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Novi</button>
+        <button class="chipbtn" id="btnBuyerEdit" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Uredi</button>
+      </div>
+    </div>
+    <select id="buyerSel"></select>
+    <div class="bm mono" id="buyerMeta"></div>
+  </section>
+
+  <section class="panel" id="buyerEd" hidden>
+    <div class="ph"><h2 id="bedTitle">Kupac</h2><span class="pill" id="bedPill" hidden>Nespremljeno</span></div>
+    <div class="grid">
+      <label class="fld wide"><span>Naziv tvrtke</span><input type="text" id="b-name" data-b="name" autocomplete="off"></label>
+      <label class="fld"><span>OIB</span><input type="text" id="b-oib" data-b="oib" inputmode="numeric" class="mono" autocomplete="off" maxlength="14"></label>
+      <label class="fld"><span>Poštanski broj</span><input type="text" id="b-zip" data-b="zip" inputmode="numeric" autocomplete="off"></label>
+      <label class="fld wide"><span>Ulica i kućni broj</span><input type="text" id="b-street" data-b="street" autocomplete="off"></label>
+      <label class="fld wide"><span>Grad</span><input type="text" id="b-city" data-b="city" autocomplete="off"></label>
+    </div>
+    <ul class="msgs" id="bedMsg"></ul>
+    <div class="actions">
+      <button class="btn primary savebtn" id="btnBuyerSave" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span id="bedSaveLbl">Spremi kupca</span></button>
+      <button class="btn small" id="btnBuyerCancel" type="button">Zatvori</button>
+      <button class="btn small danger" id="btnBuyerDel" type="button">Obriši kupca</button>
+    </div>
+    <p class="hint">Spremljeni kupci ostaju na ovom uređaju i uvijek su dostupni u popisu.</p>
+  </section>
+
+  <p class="note" id="aiNote" hidden></p>
+  <p class="note info" id="pdfNote" role="status" hidden></p>
+
+  <section class="panel" id="empty">
+    <h2>Kako radi</h2>
+    <ol class="how">
+      <li><span class="n">1</span><div><b>Slikaj ili učitaj PDF</b><span class="d">Jedan račun po slici. PDF s više računa razdvaja se sam.</span></div></li>
+      <li><span class="n">2</span><div><b>Provjeri očitano</b><span class="d">Naziv, adresa, OIB, broj, datumi i iznosi. Što treba pogledati, označeno je.</span></div></li>
+      <li><span class="n">3</span><div><b>Izvezi ZIP</b><span class="d">Po jedan XML za svaki račun. Spremi u Datoteke ili oblak i uvezi u Synesis.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="listhead" id="listHead" hidden><span id="cnt"></span><span class="lh"><button class="linkbtn muted" id="btnClear" type="button" hidden>Očisti izvezene</button><button class="linkbtn" id="btnWipe" type="button">Obriši sve</button></span></div>
+  <ul id="list"></ul>
+
+  <div class="bar" id="bar" hidden>
+    <div class="bar-in">
+      <div class="bar-info" id="barInfo"></div>
+      <label class="btn cam" for="camIn" id="btnBarCam" aria-label="Slikaj sljedeći račun"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></label>
+      <button class="btn primary" id="btnExport" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg><span id="exportLbl">Izvezi ZIP</span></button>
+    </div>
+  </div>
+</div>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Slika računa" hidden>
+  <div class="vbar"><span id="vcnt"></span><div class="vb"><button type="button" id="vPrev" aria-label="Prethodna stranica">‹</button><button type="button" id="vNext" aria-label="Sljedeća stranica">›</button><button type="button" id="vMinus" aria-label="Smanji">−</button><button type="button" id="vPlus" aria-label="Povećaj">+</button><button type="button" id="vClose">Zatvori</button></div></div>
+  <div class="vscroll" id="vscroll"><img id="vimg" alt="Slika računa"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script id="core">
+/* ---------- Čista logika: formati, provjere, izračuni, XML ---------- */
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const r2 = n => { const s = n < 0 ? -1 : 1; return s * Math.round((Math.abs(n) + 1e-9) * 100) / 100; };
+const fmt2 = n => (Math.round(Math.abs(n) * 100 + 1e-7) / 100 * (n < 0 ? -1 : 1)).toFixed(2);
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim().replace(/\s/g, '');
+  if (!s) return NaN;
+  if (s.includes(',') && s.includes('.')) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else s = s.replace(',', '.');
+  return /^-?\d*\.?\d+$/.test(s) ? Number(s) : NaN;
+}
+const numStr = v => { const n = parseNum(v); return Number.isFinite(n) ? String(+n.toFixed(4)) : ''; };
+const qtyFmt = n => n.toFixed(4);
+const priceFmt = n => { let s = n.toFixed(4); s = s.replace(/0{1,2}$/, ''); return s; };
+
+function oibValid(s) {
+  if (!/^\d{11}$/.test(s)) return false;
+  let a = 10;
+  for (let i = 0; i < 10; i++) { a = (a + Number(s[i])) % 10; if (a === 0) a = 10; a = (a * 2) % 11; }
+  let c = 11 - a; if (c === 10) c = 0;
+  return c === Number(s[10]);
+}
+function ibanValid(raw) {
+  const s = String(raw || '').replace(/\s/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s)) return false;
+  const t = (s.slice(4) + s.slice(0, 4)).replace(/[A-Z]/g, c => c.charCodeAt(0) - 55);
+  let rem = 0;
+  for (const ch of t) rem = (rem * 10 + Number(ch)) % 97;
+  return rem === 1;
+}
+
+const blankLine = () => ({ name: '', qty: '1', unit: 'H87', price: '', vat: '25', net: '', netManual: false, kpd: '', gross: '', deposit: false });
+const blankData = () => ({
+  number: '', issueDate: '', issueTime: '', dueDate: '', currency: 'EUR',
+  supplier: { name: '', oib: '', street: '', zip: '', city: '', country: 'HR', iban: '', bank: '' },
+  paymentRef: '', lines: [blankLine()], exemptionReason: '', paid: false, confirmed: false, vatAdj: {}, readTotal: '', readNet: '', readVat: '',
+});
+function normalizeAI(o) {
+  const d = blankData();
+  o = o && typeof o === 'object' ? o : {};
+  const t = v => String(v ?? '').trim();
+  d.number = t(o.number);
+  d.issueDate = /^\d{4}-\d\d-\d\d$/.test(t(o.issueDate)) ? t(o.issueDate) : '';
+  d.issueTime = /^\d\d:\d\d(:\d\d)?$/.test(t(o.issueTime)) ? (t(o.issueTime).length === 5 ? t(o.issueTime) + ':00' : t(o.issueTime)) : '';
+  d.dueDate = /^\d{4}-\d\d-\d\d$/.test(t(o.dueDate)) ? t(o.dueDate) : '';
+  d.currency = /^[A-Za-z]{3}$/.test(t(o.currency)) ? t(o.currency).toUpperCase() : 'EUR';
+  const s = o.supplier || {};
+  d.supplier = {
+    name: t(s.name), oib: t(s.oib).replace(/\s/g, ''), street: t(s.street), zip: t(s.zip), city: t(s.city),
+    country: /^[A-Za-z]{2}$/.test(t(s.country)) ? t(s.country).toUpperCase() : 'HR',
+    iban: t(s.iban).replace(/\s/g, '').toUpperCase(), bank: t(s.bank),
+  };
+  d.paymentRef = t(o.paymentRef);
+  const lines = Array.isArray(o.lines) ? o.lines : [];
+  d.lines = lines.map(l => {
+    const qty = numStr(l.qty) || '1', price = numStr(l.price);
+    let net = numStr(l.net);
+    const manual = !!net;
+    if (!net && price) net = numStr(r2(parseNum(qty) * parseNum(price)));
+    return { name: t(l.name), qty, unit: /^[A-Z0-9]{2,3}$/.test(t(l.unit)) ? t(l.unit) : 'H87', price, vat: numStr(l.vat) || '0', net, netManual: manual, kpd: t(l.kpd), deposit: l.deposit === true, gross: numStr(l.gross) };
+  });
+  if (!d.lines.length) d.lines = [blankLine()];
+  d.exemptionReason = t(o.exemptionReason);
+  d.paid = o.paid === true;
+  d.readTotal = numStr(o.totalGross); d.readNet = numStr(o.totalNet); d.readVat = numStr(o.totalVat);
+  if (!d.dueDate) d.dueDate = d.issueDate;
+  applyGrossLines(d); reconcile(d);
+  return d;
+}
+
+/* Iznosi stavki s PDV-om (bruto) imaju prednost: osnovica = bruto / (1 + stopa), PDV = bruto - osnovica, bez gomilanja centi. */
+function applyGrossLines(d) {
+  d.vatAdj = {};
+  const rates = new Set(d.lines.filter(l => !l.deposit && Number.isFinite(parseNum(l.gross)) && Number.isFinite(parseNum(l.vat))).map(l => parseNum(l.vat)));
+  rates.forEach(rate => {
+    const all = d.lines.filter(l => !l.deposit && parseNum(l.vat) === rate);
+    if (!all.length || !all.every(l => Number.isFinite(parseNum(l.gross)))) return;
+    const f = 1 + rate / 100, sumG = r2(all.reduce((a, l) => a + parseNum(l.gross), 0)), base = r2(sumG / f);
+    let acc = 0;
+    all.forEach(l => { const n = r2(parseNum(l.gross) / f); l.net = numStr(n); l.netManual = true; acc += n; });
+    const diff = r2(base - acc);
+    if (diff) { const big = all.reduce((a, l) => (parseNum(l.net) > parseNum(a.net) ? l : a)); big.net = numStr(r2(parseNum(big.net) + diff)); }
+    all.forEach(l => { const q = parseNum(l.qty); if (q > 0) l.price = numStr(+(parseNum(l.net) / q).toFixed(4)); });
+    const tax = r2(sumG - base), calc = r2(base * rate / 100);
+    if (tax !== calc) d.vatAdj[rate] = r2(tax - calc);
+  });
+}
+
+/* Ako su otisnuti iznosi na računu blizu zbroja stavki (do 5 centi), mjerodavni su otisnuti iznosi. */
+function reconcile(d) {
+  const adj = {};
+  const dep = () => d.lines.reduce((a, l) => a + (l.deposit && Number.isFinite(parseNum(l.net)) ? parseNum(l.net) : 0), 0);
+  const rn = parseNum(d.readNet), rv = parseNum(d.readVat);
+  const hasGross = d.lines.some(l => !l.deposit && Number.isFinite(parseNum(l.gross)));
+  if (Number.isFinite(rn) && !hasGross) {
+    const dn = r2(rn - r2(computeTotals({ ...d, vatAdj: {} }).net - dep()));
+    if (dn && Math.abs(dn) <= 0.05) {
+      const cand = d.lines.filter(l => !l.deposit && Number.isFinite(parseNum(l.net)));
+      if (cand.length) { const big = cand.reduce((a, l) => (parseNum(l.net) > parseNum(a.net) ? l : a)); big.net = numStr(r2(parseNum(big.net) + dn)); big.netManual = true; }
+    }
+  }
+  const base = computeTotals({ ...d, vatAdj: hasGross ? d.vatAdj : {} });
+  if (Number.isFinite(rv)) {
+    const dv = r2(rv - base.vat);
+    if (dv && Math.abs(dv) <= 0.05 && base.subs.length) {
+      const big = base.subs.reduce((a, x) => (x.base > a.base ? x : a));
+      const prev = (hasGross ? d.vatAdj[big.rate] : 0) || 0;
+      Object.assign(adj, hasGross ? d.vatAdj : {}); adj[big.rate] = r2(prev + dv);
+      d.vatAdj = adj; return;
+    }
+  }
+  if (!hasGross) d.vatAdj = {};
+}
+
+function computeTotals(d) {
+  const groups = new Map(); let net = 0;
+  for (const l of d.lines) {
+    const n = parseNum(l.net); if (!Number.isFinite(n)) continue;
+    const rate = Number.isFinite(parseNum(l.vat)) ? parseNum(l.vat) : 0;
+    const v = r2(n); net += v; groups.set(rate, (groups.get(rate) || 0) + v);
+  }
+  const subs = []; let vat = 0;
+  for (const [rate, base] of [...groups].sort((a, b) => b[0] - a[0])) {
+    const tax = r2(base * rate / 100 + ((d.vatAdj && d.vatAdj[rate]) || 0)); vat += tax; subs.push({ rate, base: r2(base), tax });
+  }
+  net = r2(net); vat = r2(vat);
+  return { net, vat, gross: r2(net + vat), subs };
+}
+
+function totalsMismatch(d) {
+  const t = computeTotals(d), m = [];
+  const dep = d.lines.reduce((a, l) => a + (l.deposit && Number.isFinite(parseNum(l.net)) ? parseNum(l.net) : 0), 0);
+  const rn = parseNum(d.readNet), rv = parseNum(d.readVat), rt = parseNum(d.readTotal);
+  if (Number.isFinite(rn) && Math.abs(r2(t.net - dep) - rn) > 0.02) m.push(`Iznos bez PDV-a po stavkama (${fmt2(r2(t.net - dep))}) ne odgovara računu (${fmt2(rn)}).`);
+  if (Number.isFinite(rv) && Math.abs(t.vat - rv) > 0.02) m.push(`PDV po stavkama (${fmt2(t.vat)}) ne odgovara računu (${fmt2(rv)}).`);
+  if (Number.isFinite(rt) && Math.abs(t.gross - rt) > 0.02) m.push(`Zbroj stavki (${fmt2(t.gross)}) ne odgovara iznosu na računu (${fmt2(rt)}).`);
+  return m;
+}
+
+function issuesOf(inv) {
+  const d = inv.data, errors = [], warnings = [];
+  if (!d.number.trim()) errors.push('Nedostaje broj računa.');
+  if (!/^\d{4}-\d\d-\d\d$/.test(d.issueDate)) errors.push('Nedostaje datum izdavanja.');
+  if (!d.supplier.name.trim()) errors.push('Nedostaje naziv dobavljača.');
+  if (!/^[A-Za-z]{3}$/.test(d.currency)) errors.push('Valuta mora imati 3 slova, npr. EUR.');
+  const bad = d.lines.findIndex(l => !l.name.trim() || !Number.isFinite(parseNum(l.net)) || !Number.isFinite(parseNum(l.vat)) || !Number.isFinite(parseNum(l.qty)));
+  if (bad >= 0) errors.push(`Stavka ${bad + 1} nije potpuna (opis, količina, PDV i neto iznos).`);
+  const s = d.supplier;
+  if (s.country === 'HR') {
+    if (!s.oib) warnings.push('Nedostaje OIB dobavljača.');
+    else if (/^\d+$/.test(s.oib) && !oibValid(s.oib)) warnings.push('OIB dobavljača nije ispravan.');
+  }
+  if (s.iban && !ibanValid(s.iban)) warnings.push('IBAN nije ispravan.');
+  if (d.dueDate && d.issueDate && d.dueDate < d.issueDate) warnings.push('Datum dospijeća je prije datuma izdavanja.');
+  const mm = totalsMismatch(d);
+  if (mm.length && !d.confirmed) errors.push(...mm, 'Ispravi stavke ili označi „Iznose sam provjerio” pod Iznosi.');
+  d.lines.forEach((l, i) => {
+    const q = parseNum(l.qty), p = parseNum(l.price), n = parseNum(l.net);
+    if (Number.isFinite(q) && Number.isFinite(p) && Number.isFinite(n) && Math.abs(q * p - n) > 0.06) warnings.push(`Stavka ${i + 1}: količina × cijena ne daje neto iznos.`);
+  });
+  if (d.lines.some(l => !l.deposit && Number.isFinite(parseNum(l.vat)) && parseNum(l.vat) === 0) && !d.exemptionReason.trim()) warnings.push('Stavke bez PDV-a: dodaj razlog oslobođenja ako ga račun navodi.');
+  return { errors, warnings };
+}
+
+function taxCat(rate, reason) {
+  if (rate > 0) return { id: 'S', name: 'HR:PDV' + String(+rate.toFixed(2)), pct: rate.toFixed(2), reason: '' };
+  if (reason) return { id: 'E', name: 'HR:E', pct: '0.00', reason };
+  return { id: 'Z', name: 'HR:Z', pct: '0.00', reason: '' };
+}
+const catXml = (c, ns, scheme) =>
+  `<cbc:ID schemeID="UN/ECE 5305" schemeAgencyID="6">${c.id}</cbc:ID><cbc:Name>${esc(c.name)}</cbc:Name><cbc:Percent>${c.pct}</cbc:Percent>` +
+  (c.reason ? `<cbc:TaxExemptionReason>${esc(c.reason)}</cbc:TaxExemptionReason>` : '') +
+  `<${scheme}><cbc:ID>VAT</cbc:ID></${scheme}>`;
+
+function partyXml(p, wrapTag) {
+  const oib = /^\d{11}$/.test(p.oib) ? p.oib : '';
+  const vatId = oib ? 'HR' + oib : (/^[A-Za-z]{2}[A-Za-z0-9]{2,14}$/.test(p.oib) ? p.oib.toUpperCase() : '');
+  let x = `<cac:${wrapTag}><cac:Party>`;
+  if (oib) x += `<cbc:EndpointID schemeID="9934">${oib}</cbc:EndpointID><cac:PartyIdentification><cbc:ID>9934:${oib}</cbc:ID></cac:PartyIdentification>`;
+  if (wrapTag === 'AccountingCustomerParty') x += `<cac:PartyName><cbc:Name>${esc(p.name)}</cbc:Name></cac:PartyName>`;
+  x += `<cac:PostalAddress>`;
+  if (p.street) x += `<cbc:StreetName>${esc(p.street)}</cbc:StreetName>`;
+  if (p.city) x += `<cbc:CityName>${esc(p.city)}</cbc:CityName>`;
+  if (p.zip) x += `<cbc:PostalZone>${esc(p.zip)}</cbc:PostalZone>`;
+  x += `<cac:Country><cbc:IdentificationCode listAgencyID="6" listVersionID="0.3">${esc(p.country || 'HR')}</cbc:IdentificationCode></cac:Country></cac:PostalAddress>`;
+  if (vatId) x += `<cac:PartyTaxScheme><cbc:CompanyID>${esc(vatId)}</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>`;
+  x += `<cac:PartyLegalEntity><cbc:RegistrationName>${esc(p.name)}</cbc:RegistrationName>`;
+  if (oib && wrapTag === 'AccountingSupplierParty') x += `<cbc:CompanyID>${oib}</cbc:CompanyID>`;
+  x += `</cac:PartyLegalEntity></cac:Party></cac:${wrapTag}>`;
+  return x;
+}
+
+function buildXml(inv, buyer, opts = {}) {
+  const d = inv.data, t = computeTotals(d), cur = (d.currency || 'EUR').toUpperCase();
+  const m = (tag, v) => `<cbc:${tag} currencyID="${cur}">${fmt2(v)}</cbc:${tag}>`;
+  const reason = d.exemptionReason.trim();
+  const prepaid = d.paid ? t.gross : 0;
+  const subsXml = (tagSub, catTag, schemeTag) => t.subs.map(s => {
+    const c = taxCat(s.rate, reason);
+    return `<${tagSub}>${m('TaxableAmount', s.base)}${m('TaxAmount', s.tax)}<${catTag}>${catXml(c, '', schemeTag)}</${catTag}></${tagSub}>`;
+  }).join('');
+  let x = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>`;
+  x += `<Invoice xmlns:hrextac="urn:mfin.gov.hr:schema:xsd:HRExtensionAggregateComponents-1" xmlns:cct="urn:un:unece:uncefact:data:specification:CoreComponentTypeSchemaModule:2" xmlns:sac="urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:p3="urn:oasis:names:specification:ubl:schema:xsd:UnqualifiedDataTypes-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:exthr="urn:invoice:hr:schema:xsd:CommonExtensionComponents-1">\n`;
+  x += `<ext:UBLExtensions><ext:UBLExtension><ext:ExtensionContent><sig:UBLDocumentSignatures><sac:SignatureInformation></sac:SignatureInformation></sig:UBLDocumentSignatures></ext:ExtensionContent></ext:UBLExtension><ext:UBLExtension><ext:ExtensionContent><hrextac:HRFISK20Data><hrextac:HRTaxTotal>${m('TaxAmount', t.vat)}`;
+  x += subsXml('hrextac:HRTaxSubtotal', 'hrextac:HRTaxCategory', 'hrextac:HRTaxScheme');
+  x += `</hrextac:HRTaxTotal><hrextac:HRLegalMonetaryTotal>${m('TaxExclusiveAmount', t.net)}<hrextac:OutOfScopeOfVATAmount currencyID="${cur}">0.00</hrextac:OutOfScopeOfVATAmount></hrextac:HRLegalMonetaryTotal></hrextac:HRFISK20Data></ext:ExtensionContent></ext:UBLExtension></ext:UBLExtensions>\n`;
+  x += `<cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:mfin.gov.hr:cius-2025:1.0#conformant#urn:mfin.gov.hr:ext-2025:1.0</cbc:CustomizationID><cbc:ProfileID>P2</cbc:ProfileID>`;
+  x += `<cbc:ID>${esc(d.number.trim())}</cbc:ID><cbc:IssueDate>${d.issueDate}</cbc:IssueDate>`;
+  if (d.issueTime) x += `<cbc:IssueTime>${d.issueTime}</cbc:IssueTime>`;
+  x += `<cbc:DueDate>${d.dueDate || d.issueDate}</cbc:DueDate>`;
+  x += `<cbc:InvoiceTypeCode listAgencyID="6">380</cbc:InvoiceTypeCode><cbc:DocumentCurrencyCode listAgencyID="5">${cur}</cbc:DocumentCurrencyCode>`;
+  x += `<cac:InvoicePeriod><cbc:DescriptionCode>3</cbc:DescriptionCode></cac:InvoicePeriod>\n`;
+  if (opts.attach && inv.pages && inv.pages.length) {
+    inv.pages.forEach((p, i) => {
+      const b64 = String(p).replace(/^data:[^,]+,/, '');
+      const id = i === 0 ? d.number.trim() : `${d.number.trim()}-${i + 1}`;
+      x += `<cac:AdditionalDocumentReference><cbc:ID>${esc(id)}</cbc:ID><cbc:DocumentDescription>${esc('Slika računa ' + d.number.trim() + (inv.pages.length > 1 ? ` (${i + 1}/${inv.pages.length})` : ''))}</cbc:DocumentDescription><cac:Attachment><cbc:EmbeddedDocumentBinaryObject mimeCode="image/jpeg" filename="racun-${i + 1}.jpg">${b64}</cbc:EmbeddedDocumentBinaryObject></cac:Attachment></cac:AdditionalDocumentReference>\n`;
+    });
+  }
+  x += partyXml(d.supplier, 'AccountingSupplierParty') + '\n';
+  x += partyXml(buyer, 'AccountingCustomerParty') + '\n';
+  const iban = d.supplier.iban.replace(/\s/g, '').toUpperCase();
+  x += `<cac:PaymentMeans><cbc:PaymentMeansCode>${iban ? 30 : 1}</cbc:PaymentMeansCode>`;
+  if (d.paymentRef.trim()) x += `<cbc:PaymentID>${esc(d.paymentRef.trim())}</cbc:PaymentID>`;
+  if (iban) x += `<cac:PayeeFinancialAccount><cbc:ID>${esc(iban)}</cbc:ID>${d.supplier.bank ? `<cbc:Name>${esc(d.supplier.bank)}</cbc:Name>` : ''}</cac:PayeeFinancialAccount>`;
+  x += `</cac:PaymentMeans>\n`;
+  x += `<cac:TaxTotal>${m('TaxAmount', t.vat)}${subsXml('cac:TaxSubtotal', 'cac:TaxCategory', 'cac:TaxScheme')}</cac:TaxTotal>\n`;
+  x += `<cac:LegalMonetaryTotal>${m('LineExtensionAmount', t.net)}${m('TaxExclusiveAmount', t.net)}${m('TaxInclusiveAmount', t.gross)}${m('PrepaidAmount', prepaid)}${m('PayableAmount', t.gross - prepaid)}</cac:LegalMonetaryTotal>\n`;
+  d.lines.forEach((l, i) => {
+    const qty = parseNum(l.qty), net = r2(parseNum(l.net)), rate = parseNum(l.vat) || 0;
+    let price = parseNum(l.price); if (!Number.isFinite(price)) price = qty ? net / qty : net;
+    const c = taxCat(rate, reason), unit = l.unit || 'H87';
+    x += `<cac:InvoiceLine><cbc:ID>${i + 1}</cbc:ID><cbc:InvoicedQuantity unitCode="${esc(unit)}">${qtyFmt(qty)}</cbc:InvoicedQuantity>${m('LineExtensionAmount', net)}`;
+    x += `<cac:Item><cbc:Name>${esc(l.name.replace(/\s+/g, ' ').trim())}</cbc:Name>`;
+    if (l.kpd.trim()) x += `<cac:CommodityClassification><cbc:ItemClassificationCode listID="CG">${esc(l.kpd.trim())}</cbc:ItemClassificationCode></cac:CommodityClassification>`;
+    x += `<cac:ClassifiedTaxCategory>${catXml(c, '', 'cac:TaxScheme')}</cac:ClassifiedTaxCategory></cac:Item>`;
+    x += `<cac:Price><cbc:PriceAmount currencyID="${cur}">${priceFmt(price)}</cbc:PriceAmount><cbc:BaseQuantity unitCode="${esc(unit)}">1.0000</cbc:BaseQuantity></cac:Price></cac:InvoiceLine>\n`;
+  });
+  return x + `</Invoice>\n`;
+}
+
+const cleanName = s => String(s || '').trim().replace(/\s+/g, '_').replace(/[\\\/:*?"<>|]+/g, '-').replace(/[^\p{L}\p{N}._-]/gu, '');
+const fileNameFor = inv => `${inv.data.issueDate}-${cleanName(inv.data.supplier.name) || 'dobavljac'}-${cleanName(inv.data.number) || 'racun'}.xml`;
+</script>
+
+<script>
+/* Samostalna verzija: isti API kao u Claude artefaktu, ali preko vlastitog API ključa i Web Share izbornika. */
+window.__standalone = true;
+(function () {
+  const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+  const DEFAULT_MODEL = 'claude-sonnet-5-5', QUICK_MODEL = 'claude-haiku-5-5';
+  const b64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+  function parseJson(t) {
+    const tryP = x => { try { return { v: JSON.parse(x) }; } catch (e) { return null; } };
+    let r = tryP(t.trim()); if (r) return r.v;
+    const f = /```(?:json)?\s*([\s\S]*?)```/.exec(t); if (f && (r = tryP(f[1].trim()))) return r.v;
+    const a = t.search(/[\[{]/), z = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+    if (a >= 0 && z > a && (r = tryP(t.slice(a, z + 1)))) return r.v;
+    throw { code: 'invalid_json', message: 'Odgovor nije JSON.' };
+  }
+  async function call(prompt, opts) {
+    const key = ls('apikey').trim();
+    if (!key) throw { code: 'not_granted', message: 'Nema API ključa.' };
+    const model = opts && opts.modelTier === 'quick' ? QUICK_MODEL : (ls('model').trim() || DEFAULT_MODEL);
+    const content = [];
+    for (const b of (opts && opts.images) || []) content.push({ type: 'image', source: { type: 'base64', media_type: b.type || 'image/jpeg', data: await b64(b) } });
+    content.push({ type: 'text', text: prompt });
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model, max_tokens: 8192, messages: [{ role: 'user', content }] }),
+      });
+    } catch (e) { throw { code: 'upstream_error', message: 'Nema veze.' }; }
+    if (!r.ok) {
+      let m = ''; try { m = (await r.json()).error.message; } catch (e) {}
+      throw { code: r.status === 401 || r.status === 403 ? 'not_granted' : r.status === 429 ? 'rate_limited' : r.status === 400 ? 'image_rejected' : 'upstream_error', message: m };
+    }
+    const j = await r.json();
+    return (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+  }
+  const sample = async (p, o) => ({ text: await call(p, o) });
+  sample.json = async (p, o) => parseJson(await call(p, o));
+  sample.limits = async () => (ls('apikey').trim() ? { maxPromptBytes: 262144, images: { maxCount: 8, maxInputBytes: 5e6, mediaTypes: ['image/jpeg', 'image/png'] } } : { maxPromptBytes: 262144 });
+  const downloads = {
+    async save({ filename, data }) {
+      const file = new File([data], filename, { type: 'application/zip' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: filename }); return { status: 'saved' }; }
+        catch (e) {
+          if (e && e.name === 'AbortError') throw { code: 'declined' };
+          if (e && e.name === 'NotAllowedError' && window.__toast) {
+            window.__toast('ZIP je spreman.', 'Spremi', () => { navigator.share({ files: [file], title: filename }).catch(() => {}); });
+            return { status: 'pending' };
+          }
+        }
+      }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = filename;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      return { status: 'saved' };
+    },
+  };
+  window.claude = { use: async name => name === 'sample' ? sample : name === 'downloads' ? downloads : null };
+})();
+</script>
+<script id="ui">
+(function () {
+  const $ = s => document.querySelector(s);
+  const STANDALONE = !!window.__standalone;
+  const listEl = $('#list');
+  const S = { invoices: [], seq: 0, suppliers: {}, exportedSet: new Set(), enhance: true, buyers: [], buyerId: '', buyer: null, attach: true, sample: null, canRead: false, maxImages: 3 };
+  const BUYER_DEFAULT_ID = 'default';
+  const BUYER_DEFAULT = { name: 'INTERIJERI TADIĆ D.O.O.', oib: '66735697294', street: 'KOZARI I..ODVOJAK 19', zip: '10000', city: 'ZAGREB', country: 'HR' };
+  const newId = () => 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  /* ---------- trajna pohrana (po pregledniku) ---------- */
+  const store = {
+    db: null,
+    async open() {
+      try {
+        this.db = await new Promise((res, rej) => {
+          const r = indexedDB.open('synesis-skener', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('inv', { keyPath: 'id' });
+          r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+        });
+      } catch (e) { this.db = null; }
+    },
+    put(inv) {
+      if (!this.db) return;
+      try { this.db.transaction('inv', 'readwrite').objectStore('inv').put(JSON.parse(JSON.stringify(inv))); } catch (e) {}
+    },
+    del(id) { if (!this.db) return; try { this.db.transaction('inv', 'readwrite').objectStore('inv').delete(id); } catch (e) {} },
+    all() {
+      return new Promise(res => {
+        if (!this.db) return res([]);
+        try { const r = this.db.transaction('inv').objectStore('inv').getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); } catch (e) { res([]); }
+      });
+    },
+  };
+  const timers = {};
+  function scheduleSave(inv) { clearTimeout(timers[inv.id]); timers[inv.id] = setTimeout(() => store.put(inv), 400); }
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+  /* ---------- pomoćno ---------- */
+  const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+  function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+  const byId = id => S.invoices.find(i => i.id === id);
+  const money = (n, cur) => n.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (cur || 'EUR');
+  const dateHr = s => /^\d{4}-\d\d-\d\d$/.test(s) ? s.split('-').reverse().join('.') + '.' : '';
+  let toastT;
+  window.__toast = (m, l, a) => toast(m, l, a);
+  function toast(msg, actLabel, act) {
+    const t = $('#toast'); t.textContent = msg;
+    if (act) { const b = document.createElement('button'); b.type = 'button'; b.textContent = actLabel; b.addEventListener('click', () => { act(); t.hidden = true; }); t.append(b); }
+    t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, act ? 7000 : 3500);
+  }
+
+  function compress(file, max = 2000, q = 0.82) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        let out = c; if (S.enhance) { try { out = enhanceCanvas(c); } catch (e) { out = c; } }
+        res(out.toDataURL('image/jpeg', q));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('slika')); };
+      img.src = url;
+    });
+  }
+  function dataUrlToBlob(u) {
+    const [h, b] = u.split(','), mime = /:(.*?);/.exec(h)[1], bin = atob(b), a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return new Blob([a], { type: mime });
+  }
+
+  /* ---------- kupci ---------- */
+  const buyerFor = inv => S.buyers.find(b => b.id === inv.buyerId) || S.buyer;
+  function fullIssues(inv) {
+    const is = issuesOf(inv), b = buyerFor(inv), errors = [...is.errors];
+    if (!b || !b.name.trim()) errors.push('Kupac nema naziv. Dopuni ga pod „Uredi".');
+    if (!b || !/^\d{11}$/.test(b.oib)) errors.push('OIB kupca mora imati 11 znamenki. Dopuni ga pod „Uredi".');
+    return { errors, warnings: [...is.warnings, ...dupWarnings(inv)] };
+  }
+  const buyerOptions = sel => S.buyers.map(b => `<option value="${esc(b.id)}"${b.id === sel ? ' selected' : ''}>${esc(b.name || '(bez naziva)')}</option>`).join('');
+  function renderBuyers() {
+    $('#buyerSel').innerHTML = buyerOptions(S.buyerId);
+    const b = S.buyer || {};
+    $('#buyerMeta').textContent = [b.oib ? 'OIB ' + b.oib : '', [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  }
+  function loadBuyers() {
+    let list = []; try { list = JSON.parse(lsGet('buyers') || '[]'); } catch (e) {}
+    if (!Array.isArray(list) || !list.length) {
+      let old = null; try { old = JSON.parse(lsGet('buyer') || 'null'); } catch (e) {}
+      list = [{ id: BUYER_DEFAULT_ID, ...BUYER_DEFAULT, ...(old || {}) }];
+    }
+    S.buyers = list;
+    const sid = lsGet('buyerId'); S.buyerId = list.some(b => b.id === sid) ? sid : list[0].id;
+    S.buyer = S.buyers.find(b => b.id === S.buyerId);
+  }
+
+  /* ---------- poboljšanje slike ---------- */
+  function otsuThr(hist, total) {
+    let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sB = 0, wB = 0, max = 0, thr = 128;
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t]; if (!wB) continue;
+      const wF = total - wB; if (!wF) break;
+      sB += t * hist[t];
+      const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
+      if (v > max) { max = v; thr = t; }
+    }
+    return thr;
+  }
+  function enhanceCanvas(c) {
+    const w = c.width, h = c.height;
+    const sc = Math.min(1, 200 / Math.max(w, h)), sw = Math.max(8, Math.round(w * sc)), sh = Math.max(8, Math.round(h * sc));
+    const t = document.createElement('canvas'); t.width = sw; t.height = sh;
+    const tx = t.getContext('2d', { willReadFrequently: true }); tx.drawImage(c, 0, 0, sw, sh);
+    const d = tx.getImageData(0, 0, sw, sh).data, g = new Uint8Array(sw * sh), hist = new Array(256).fill(0);
+    for (let i = 0; i < sw * sh; i++) { const v = Math.round(0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]); g[i] = v; hist[v]++; }
+    const thr = otsuThr(hist, sw * sh);
+    let bright = 0; for (let i = 0; i < g.length; i++) if (g[i] > thr) bright++;
+    const frac = bright / g.length;
+    let src = c;
+    if (frac > 0.15 && frac < 0.93) {
+      let y0 = -1, y1 = -1, x0 = -1, x1 = -1;
+      for (let y = 0; y < sh; y++) { let n = 0; for (let x = 0; x < sw; x++) if (g[y * sw + x] > thr) n++; if (n / sw > 0.35) { if (y0 < 0) y0 = y; y1 = y; } }
+      for (let x = 0; x < sw; x++) { let n = 0; for (let y = 0; y < sh; y++) if (g[y * sw + x] > thr) n++; if (n / sh > 0.35) { if (x0 < 0) x0 = x; x1 = x; } }
+      if (y0 >= 0 && x0 >= 0) {
+        const area = ((x1 - x0 + 1) * (y1 - y0 + 1)) / (sw * sh);
+        if (area > 0.3 && area < 0.92) {
+          const padX = Math.round(w * 0.015), padY = Math.round(h * 0.015);
+          const cx = Math.max(0, Math.round(x0 / sw * w) - padX), cy = Math.max(0, Math.round(y0 / sh * h) - padY);
+          const cw = Math.min(w - cx, Math.round((x1 + 1) / sw * w) + padX - cx), ch = Math.min(h - cy, Math.round((y1 + 1) / sh * h) + padY - cy);
+          const o = document.createElement('canvas'); o.width = cw; o.height = ch;
+          o.getContext('2d').drawImage(c, cx, cy, cw, ch, 0, 0, cw, ch); src = o;
+        }
+      }
+    }
+    const W = src.width, H = src.height, ctx = src.getContext('2d', { willReadFrequently: true });
+    const img = ctx.getImageData(0, 0, W, H), p = img.data, lh = new Uint32Array(256); let n = 0;
+    for (let i = 0; i < p.length; i += 16) { lh[Math.round(0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2])]++; n++; }
+    const pct = q => { let a = 0; for (let v = 0; v < 256; v++) { a += lh[v]; if (a >= n * q) return v; } return 255; };
+    const lo = pct(0.01), hi = pct(0.9);
+    if (hi - lo >= 50) {
+      const lut = new Uint8ClampedArray(256); for (let v = 0; v < 256; v++) lut[v] = (v - lo) * 255 / (hi - lo);
+      for (let i = 0; i < p.length; i += 4) { p[i] = lut[p[i]]; p[i + 1] = lut[p[i + 1]]; p[i + 2] = lut[p[i + 2]]; }
+      ctx.putImageData(img, 0, 0);
+    }
+    return src;
+  }
+
+  /* ---------- povećanje slike ---------- */
+  const V = { inv: null, i: 0, zoom: 1 };
+  function setZoom(z, fx = 0.5, fy = 0.5) {
+    const sc = $('#vscroll'), im = $('#vimg');
+    const cx = (sc.scrollLeft + fx * sc.clientWidth) / Math.max(1, sc.scrollWidth), cy = (sc.scrollTop + fy * sc.clientHeight) / Math.max(1, sc.scrollHeight);
+    V.zoom = Math.min(5, Math.max(1, z)); im.style.width = (V.zoom * 100) + '%';
+    sc.scrollLeft = cx * sc.scrollWidth - fx * sc.clientWidth; sc.scrollTop = cy * sc.scrollHeight - fy * sc.clientHeight;
+  }
+  function showPage() {
+    $('#vimg').src = V.inv.pages[V.i]; setZoom(1); $('#vscroll').scrollTo(0, 0);
+    $('#vcnt').textContent = `Stranica ${V.i + 1} od ${V.inv.pages.length}`;
+    $('#vPrev').hidden = $('#vNext').hidden = V.inv.pages.length < 2;
+  }
+  function openViewer(inv, i) { V.inv = inv; V.i = Math.min(Math.max(0, i), inv.pages.length - 1); $('#viewer').hidden = false; showPage(); }
+  function closeViewer() { $('#viewer').hidden = true; $('#vimg').removeAttribute('src'); V.inv = null; }
+  $('#vClose').addEventListener('click', closeViewer);
+  $('#vPlus').addEventListener('click', () => setZoom(V.zoom * 1.5));
+  $('#vMinus').addEventListener('click', () => setZoom(V.zoom / 1.5));
+  $('#vPrev').addEventListener('click', () => { if (V.inv && V.i > 0) { V.i--; showPage(); } });
+  $('#vNext').addEventListener('click', () => { if (V.inv && V.i < V.inv.pages.length - 1) { V.i++; showPage(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#viewer').hidden) closeViewer(); });
+  (function () {
+    const vs = $('#vscroll'); let pinch = null, lastTap = 0;
+    const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    vs.addEventListener('touchstart', e => { if (e.touches.length === 2) pinch = { d: dist(e.touches[0], e.touches[1]), z: V.zoom }; }, { passive: true });
+    vs.addEventListener('touchmove', e => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const [a, b] = e.touches, r = vs.getBoundingClientRect();
+      setZoom(pinch.z * dist(a, b) / pinch.d, ((a.clientX + b.clientX) / 2 - r.left) / r.width, ((a.clientY + b.clientY) / 2 - r.top) / r.height);
+    }, { passive: false });
+    vs.addEventListener('touchend', e => {
+      if (pinch && e.touches.length < 2) pinch = null;
+      if (e.touches.length === 0 && e.changedTouches.length === 1) {
+        const now = Date.now();
+        if (now - lastTap < 300) { const t = e.changedTouches[0], r = vs.getBoundingClientRect(); setZoom(V.zoom > 1.2 ? 1 : 2.5, (t.clientX - r.left) / r.width, (t.clientY - r.top) / r.height); lastTap = 0; }
+        else lastTap = now;
+      }
+    });
+    vs.addEventListener('dblclick', e => { const r = vs.getBoundingClientRect(); setZoom(V.zoom > 1.2 ? 1 : 2.5, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); });
+  })();
+
+  /* ---------- zapamćeni dobavljači i duplikati ---------- */
+  const normName = s => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  function loadSuppliers() {
+    try { S.suppliers = JSON.parse(lsGet('suppliers') || '{}') || {}; } catch (e) { S.suppliers = {}; }
+    try { S.exportedSet = new Set(JSON.parse(lsGet('exportedKeys') || '[]')); } catch (e) { S.exportedSet = new Set(); }
+  }
+  const saveSuppliers = () => lsSet('suppliers', JSON.stringify(S.suppliers));
+  const saveExportedKeys = () => lsSet('exportedKeys', JSON.stringify([...S.exportedSet].slice(-3000)));
+  const updSupCnt = () => { const e = $('#supCnt'); if (e) e.textContent = `Zapamćeni dobavljači: ${Object.keys(S.suppliers).length}`; };
+  function rememberSupplier(inv) {
+    const s = inv.data.supplier; if (!/^\d{11}$/.test(s.oib) || !s.name.trim()) return;
+    const prev = S.suppliers[s.oib] || {}, kpd = { ...(prev.kpd || {}) };
+    inv.data.lines.forEach(l => { const k = normName(l.name).slice(0, 60); if (k && l.kpd.trim()) { delete kpd[k]; kpd[k] = l.kpd.trim(); } });
+    Object.keys(kpd).slice(0, Math.max(0, Object.keys(kpd).length - 200)).forEach(k => delete kpd[k]);
+    S.suppliers[s.oib] = { name: s.name, street: s.street, zip: s.zip, city: s.city, country: s.country, iban: s.iban || prev.iban || '', bank: s.bank || prev.bank || '', kpd };
+  }
+  function applySuppliers(inv) {
+    const s = inv.data.supplier, notes = []; let rec = null;
+    if (oibValid(s.oib) && S.suppliers[s.oib]) rec = S.suppliers[s.oib];
+    else if (normName(s.name)) {
+      const hit = Object.entries(S.suppliers).find(([, r]) => normName(r.name) === normName(s.name));
+      if (hit && !(oibValid(s.oib) && s.oib !== hit[0])) { if (s.oib !== hit[0]) notes.push(`OIB dobavljača zamijenjen zapamćenim: ${hit[0]}.`); s.oib = hit[0]; rec = hit[1]; }
+    }
+    inv.notes = notes;
+    if (!rec) return notes.length > 0;
+    const a = normName(s.name), b = normName(rec.name);
+    if (a && !(a === b || a.includes(b) || b.includes(a))) { notes.push(`OIB odgovara dobavljaču „${rec.name}", ali je naziv na računu drugačiji. Provjeri.`); return true; }
+    const filled = [];
+    if (a !== b) { s.name = rec.name; filled.push('naziv'); }
+    const fill = (k, label) => { if (!String(s[k] || '').trim() && rec[k]) { s[k] = rec[k]; filled.push(label); } };
+    fill('street', 'adresa'); fill('zip', 'poštanski broj'); fill('city', 'mjesto'); fill('bank', 'banka');
+    if ((!s.iban || !ibanValid(s.iban)) && rec.iban) { s.iban = rec.iban; filled.push('IBAN'); }
+    let k = 0;
+    inv.data.lines.forEach(l => { if (!l.kpd.trim()) { const key = normName(l.name).slice(0, 60); if (key && rec.kpd && rec.kpd[key]) { l.kpd = rec.kpd[key]; k++; } } });
+    if (k) filled.push(`KPD šifra (${k})`);
+    if (filled.length) notes.push('Dopunjeno iz zapamćenog dobavljača: ' + filled.join(', ') + '.');
+    return notes.length > 0;
+  }
+  function invKey(inv) {
+    const s = inv.data.supplier, who = /^\d{11}$/.test(s.oib) ? s.oib : normName(s.name), num = normName(inv.data.number);
+    return who && num ? who + '|' + num : '';
+  }
+  function dupWarnings(inv) {
+    const k = invKey(inv); if (!k) return [];
+    const out = [], others = S.invoices.filter(o => o !== inv && invKey(o) === k);
+    if (others.length) out.push(`Moguć duplikat: isti broj računa i dobavljač kao kartica ${others.map(o => S.invoices.indexOf(o) + 1).join(', ')}.`);
+    if (!inv.exported && S.exportedSet.has(k)) out.push('Moguć duplikat: račun s ovim brojem i dobavljačem već je ranije izvezen.');
+    return out;
+  }
+
+  /* ---------- status ---------- */
+  function statusOf(inv) {
+    if (inv.status === 'reading' || inv.status === 'queued') return { cls: 'busy', txt: inv.status === 'queued' ? 'Čeka' : 'Čita se', spin: true };
+    if (inv.status === 'error') return { cls: 'err', txt: 'Greška' };
+    const is = fullIssues(inv);
+    if (totalsMismatch(inv.data).length && !inv.data.confirmed) return { cls: 'err', txt: 'Iznosi se ne slažu' };
+    if (is.errors.length) return { cls: 'err', txt: 'Nepotpuno' };
+    if (is.warnings.length) return { cls: 'warn', txt: 'Provjeri' };
+    return { cls: 'ok', txt: 'Spremno' };
+  }
+
+  /* ---------- prikaz ---------- */
+  function sumHtml(inv) {
+    const d = inv.data, st = statusOf(inv), t = computeTotals(d);
+    const title = d.supplier.name || (inv.status === 'reading' || inv.status === 'queued' ? 'Račun se čita…' : 'Račun bez dobavljača');
+    const sub = [d.number, dateHr(d.issueDate)].filter(Boolean).join(' · ') || (inv.status === 'error' ? esc(inv.err || '') : 'Podaci nisu uneseni');
+    const amt = t.gross ? money(t.gross, d.currency) : '';
+    const n2 = v => v.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const sub2 = (t.gross ? `neto ${n2(t.net)} · PDV ${n2(t.vat)}` : '') + (S.buyers.length > 1 && buyerFor(inv) && buyerFor(inv).name ? ` · za ${buyerFor(inv).name}` : '');
+    return `<span class="thw"><img class="th" alt="" src="${inv.pages[0]}"><span class="no mono">${S.invoices.indexOf(inv) + 1}</span></span><span class="meta"><b>${esc(title)}</b><small class="mono">${esc(sub)}</small>${sub2 ? `<small class="mono dim">${esc(sub2)}</small>` : ''}</span>` +
+      `<span class="right"><span class="amt mono">${esc(amt)}</span><span class="chip ${st.cls}">${st.spin ? '<i class="spin"></i>' : ''}${st.txt}${inv.exported ? ' · izvezeno' : ''}</span></span>`;
+  }
+  const fld = (inv, label, path, o = {}) => {
+    const v = getPath(inv.data, path);
+    return `<label class="fld ${o.cls || ''}"><span>${label}</span><input id="${inv.id}-${path}" data-f="${path}" type="${o.type || 'text'}"${o.mode ? ` inputmode="${o.mode}"` : ''}${o.mono ? ' class="mono"' : ''} value="${esc(v)}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`;
+  };
+  function issuesHtml(inv) {
+    const is = fullIssues(inv);
+    const li = [...is.errors.map(x => `<li class="e">${esc(x)}</li>`), ...is.warnings.map(x => `<li class="w">${esc(x)}</li>`)];
+    (inv.notes || []).forEach(x => li.push(`<li class="i">${esc(x)}</li>`));
+    if (inv.status === 'error') li.unshift(`<li class="e">${esc(inv.err || 'Čitanje nije uspjelo.')} Podatke možeš unijeti ručno.</li>`);
+    return li.join('');
+  }
+  function totalsHtml(inv) {
+    const d = inv.data, t = computeTotals(d), c = d.currency;
+    let h = `<span class="l">Neto</span><span class="v">${money(t.net, c)}</span>`;
+    t.subs.forEach(s => { h += `<span class="l">PDV ${+s.rate.toFixed(2)}% na ${money(s.base, c)}</span><span class="v">${money(s.tax, c)}</span>`; });
+    h += `<span class="sep"></span><span class="l big">Ukupno</span><span class="v big">${money(t.gross, c)}</span>`;
+    return h;
+  }
+  function lineHtml(inv, l, i) {
+    const p = k => `lines.${i}.${k}`, id = k => `${inv.id}-lines-${i}-${k}`;
+    return `<div class="line"><div class="line-head"><span>Stavka ${i + 1}</span>${inv.data.lines.length > 1 ? `<button type="button" data-act="delLine" data-i="${i}">Ukloni</button>` : ''}</div>` +
+      `<label class="fld"><span>Opis</span><textarea id="${id('name')}" data-f="${p('name')}" rows="2">${esc(l.name)}</textarea></label>` +
+      `<div class="grid">` +
+      `<label class="fld"><span>Količina</span><input id="${id('qty')}" class="mono" data-f="${p('qty')}" type="text" inputmode="decimal" value="${esc(l.qty)}"></label>` +
+      `<label class="fld"><span>Jedinica</span><input id="${id('unit')}" class="mono" data-f="${p('unit')}" type="text" value="${esc(l.unit)}" autocapitalize="characters"></label>` +
+      `<label class="fld"><span>Cijena neto</span><input id="${id('price')}" class="mono" data-f="${p('price')}" type="text" inputmode="decimal" value="${esc(l.price)}"></label>` +
+      `<label class="fld"><span>PDV %</span><input id="${id('vat')}" class="mono" data-f="${p('vat')}" type="text" inputmode="decimal" value="${esc(l.vat)}"></label>` +
+      `<label class="fld"><span>Neto iznos</span><input id="${id('net')}" class="mono" data-f="${p('net')}" type="text" inputmode="decimal" value="${esc(l.net)}"></label>` +
+      `<label class="fld"><span>KPD šifra</span><input id="${id('kpd')}" class="mono" data-f="${p('kpd')}" type="text" inputmode="numeric" value="${esc(l.kpd)}" placeholder="npr. 65.12.22"></label>` +
+      `</div></div>`;
+  }
+  function editorHtml(inv) {
+    const d = inv.data;
+    const pages = inv.pages.map((p, i) => `<div class="pg"><img alt="Stranica ${i + 1}" src="${p}" data-act="view" data-i="${i}">${inv.pages.length > 1 ? `<button type="button" data-act="delPage" data-i="${i}" aria-label="Ukloni stranicu ${i + 1}">×</button>` : ''}</div>`).join('');
+    return `<div class="ed">` +
+      `<ul class="iss" data-role="iss">${issuesHtml(inv)}</ul>` +
+      `<div class="sec"><h3>Slike (${inv.pages.length})</h3><div class="pages">${pages}</div><p class="hint">Dodirni sliku za povećanje.</p></div>` +
+      `<div class="sec"><h3>Kupac</h3><label class="fld"><span>Račun je za tvrtku</span><select id="${inv.id}-buyer" data-buyer="1">${buyerOptions(inv.buyerId || S.buyerId)}</select></label></div>` +
+      `<div class="sec"><h3>Račun</h3><div class="grid">` +
+      fld(inv, 'Broj računa', 'number', { cls: 'wide', mono: true }) +
+      fld(inv, 'Datum izdavanja', 'issueDate', { type: 'date' }) + fld(inv, 'Datum dospijeća (prazno = datum računa)', 'dueDate', { type: 'date' }) +
+      fld(inv, 'Vrijeme', 'issueTime', { type: 'time' }) + fld(inv, 'Valuta', 'currency', { mono: true }) +
+      `</div></div>` +
+      `<div class="sec"><h3>Dobavljač</h3><div class="grid">` +
+      fld(inv, 'Naziv', 'supplier.name', { cls: 'wide' }) +
+      fld(inv, 'OIB / PDV ID', 'supplier.oib', { mono: true }) + fld(inv, 'Država', 'supplier.country', { mono: true }) +
+      fld(inv, 'Adresa', 'supplier.street', { cls: 'wide' }) +
+      fld(inv, 'Poštanski broj', 'supplier.zip', { mode: 'numeric' }) + fld(inv, 'Grad', 'supplier.city') +
+      fld(inv, 'IBAN', 'supplier.iban', { cls: 'wide', mono: true }) + fld(inv, 'Banka', 'supplier.bank') + fld(inv, 'Poziv na broj', 'paymentRef', { mono: true }) +
+      `</div></div>` +
+      `<div class="sec"><h3>Stavke</h3>${d.lines.map((l, i) => lineHtml(inv, l, i)).join('')}<div class="actions"><button class="btn small" type="button" data-act="addLine">Dodaj stavku</button></div></div>` +
+      `<div class="sec"><h3>Iznosi</h3><div class="tot" data-role="tot">${totalsHtml(inv)}</div>` +
+      `<div class="actions"><button class="btn small" type="button" data-act="reconcile">Uskladi s iznosima na računu</button></div>` +
+      `<div class="grid">${fld(inv, 'Ukupno na računu (za usporedbu)', 'readTotal', { mode: 'decimal', mono: true, cls: 'wide' })}` +
+      fld(inv, 'Razlog oslobođenja od PDV-a', 'exemptionReason', { cls: 'wide' }) + `</div>` +
+      `<label class="check"><input type="checkbox" id="${inv.id}-paid" data-f="paid"${d.paid ? ' checked' : ''}> Već plaćeno (kartica, gotovina)</label>` +
+      `<label class="check"><input type="checkbox" id="${inv.id}-confirmed" data-f="confirmed"${d.confirmed ? ' checked' : ''}> Iznose sam provjerio (dopusti izvoz unatoč neslaganju s računom)</label></div>` +
+      `<div class="sec"><h3>XML</h3><div class="actions"><button class="btn small" type="button" data-act="xml">${inv.showXml ? 'Sakrij XML' : 'Pregled XML-a'}</button></div>${inv.showXml ? `<pre class="code" tabindex="0">${xmlPreview(inv)}</pre>` : ''}</div>` +
+      `<div class="actions">` +
+      (S.canRead ? `<button class="btn small" type="button" data-act="reread">Pročitaj ponovno</button>` : '') +
+      `<button class="btn small" type="button" data-act="addPage">Dodaj stranicu</button>` +
+      `<button class="btn small" type="button" data-act="toggle">Zatvori</button>` +
+      `<button class="btn small danger" type="button" data-act="remove">Obriši račun</button></div></div>`;
+  }
+  function cardHtml(inv) {
+    return `<div class="head"><button class="sum" type="button" data-act="toggle" aria-expanded="${!!inv.open}">${sumHtml(inv)}</button>` +
+      `<button class="del" type="button" data-act="remove" aria-label="Obriši račun"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg></button></div>${inv.open ? editorHtml(inv) : ''}`;
+  }
+  function renderCard(inv) {
+    let li = listEl.querySelector(`[data-id="${inv.id}"]`);
+    if (!li) { li = document.createElement('li'); li.className = 'card'; li.dataset.id = inv.id; listEl.append(li); }
+    li.innerHTML = cardHtml(inv); li.dataset.st = statusOf(inv).cls;
+  }
+  function renderAll() {
+    listEl.innerHTML = '';
+    S.invoices.forEach(renderCard);
+    refreshChrome();
+  }
+  function refreshDerived(inv) {
+    const li = listEl.querySelector(`[data-id="${inv.id}"]`); if (!li) return;
+    li.querySelector('.sum').innerHTML = sumHtml(inv);
+    const iss = li.querySelector('[data-role=iss]'); if (iss) iss.innerHTML = issuesHtml(inv);
+    const tot = li.querySelector('[data-role=tot]'); if (tot) tot.innerHTML = totalsHtml(inv);
+    refreshChrome();
+  }
+  function refreshChrome() {
+    const n = S.invoices.length;
+    listEl.querySelectorAll('.card').forEach((li, i) => { const e = li.querySelector('.no'); if (e) e.textContent = String(i + 1); });
+    S.invoices.forEach(inv => {
+      const li = listEl.querySelector(`[data-id="${inv.id}"]`); if (!li) return;
+      const st = statusOf(inv), ch = li.querySelector('.chip'); li.dataset.st = st.cls;
+      if (ch) { ch.className = 'chip ' + st.cls; ch.innerHTML = (st.spin ? '<i class="spin"></i>' : '') + st.txt + (inv.exported ? ' · izvezeno' : ''); }
+      const is = li.querySelector('[data-role=iss]'); if (is) is.innerHTML = issuesHtml(inv);
+    });
+    $('#empty').hidden = n > 0;
+    $('#listHead').hidden = n === 0;
+    $('#cnt').textContent = `Računi (${n})`;
+    $('#bar').hidden = n === 0;
+    const ready = S.invoices.filter(isExportable), busy = S.invoices.filter(i => i.status === 'reading' || i.status === 'queued').length;
+    const bad = n - ready.length - busy;
+    $('#barInfo').innerHTML = `<b>${ready.length}</b> od ${n} za izvoz` + (busy ? ` · ${busy} se čita` : '') + (bad > 0 ? ` · ${bad} za ispravak` : '');
+    $('#btnExport').disabled = ready.length === 0;
+    $('#exportLbl').textContent = ready.length ? `Izvezi ZIP (${ready.length})` : 'Izvezi ZIP';
+    $('#btnClear').hidden = !S.invoices.some(i => i.exported);
+  }
+  const isExportable = inv => inv.status !== 'reading' && inv.status !== 'queued' && !fullIssues(inv).errors.length;
+
+  /* ---------- čitanje računa (Claude) ---------- */
+  const errCopy = c => ({
+    not_granted: STANDALONE ? 'API ključ nije upisan ili nije ispravan. Provjeri ga u Postavkama.' : 'Čitanje nije dopušteno. Dopusti Claudeu čitanje kad se pojavi upit.',
+    rate_limited: 'Previše zahtjeva ili dosegnut limit. Pokušaj kasnije.',
+    invalid_json: 'Odgovor nije bilo moguće razumjeti. Pokušaj ponovno.',
+    image_rejected: STANDALONE ? 'Slika ili zahtjev nisu prihvaćeni. Pokušaj ponovno s manjom slikom.' : 'Slika nije prihvaćena.',
+    refused: 'Claude nije mogao pročitati ovu sliku.',
+    session_expired: 'Sesija je istekla. Prijavi se ponovno.',
+  }[c] || 'Čitanje nije uspjelo.');
+  function promptFor(inv, hint) {
+    const b = buyerFor(inv);
+    return `Ti si asistent za knjigovodstvo u Hrvatskoj. Na priloženoj slici (ili slikama, to su stranice istog dokumenta) je jedan račun ili faktura. Kupac je ${b.name}, OIB ${b.oib}. Dobavljač je druga strana, to jest izdavatelj računa.
+
+Vrati ISKLJUČIVO jedan JSON objekt, bez dodatnog teksta, ovog oblika:
+{
+ "number": "broj računa točno kako je otisnut",
+ "issueDate": "YYYY-MM-DD",
+ "issueTime": "HH:MM:SS ili prazan string",
+ "dueDate": "YYYY-MM-DD, datum dospijeća/valuta plaćanja ako je posebno naveden, inače prazan string",
+ "currency": "EUR",
+ "supplier": {"name": "", "oib": "11 znamenki, ili PDV ID stranog dobavljača", "street": "ulica I kućni broj zajedno, npr. Vrtni put 1", "zip": "", "city": "", "country": "ISO 2 slova, npr. HR", "iban": "", "bank": ""},
+ "paymentRef": "poziv na broj s modelom, npr. HR00 123-456",
+ "lines": [{"name": "", "qty": 1, "unit": "H87", "price": 0, "vat": 25, "net": 0, "kpd": "", "deposit": false, "gross": null}],
+ "exemptionReason": "tekst o oslobođenju od PDV-a ako ga račun navodi, inače prazan string",
+ "totalNet": 0,
+ "totalVat": 0,
+ "totalGross": 0,
+ "paid": false
+}
+Pravila:
+- Brojevi su JSON brojevi s decimalnom točkom, bez razdjelnika tisućica.
+- price je jedinična cijena BEZ PDV-a, net je iznos stavke BEZ PDV-a nakon popusta. Ako su na računu cijene s PDV-om, preračunaj u neto: neto = bruto / (1 + stopa/100), zaokruži na 2 decimale.
+- vat je stopa u postocima (25, 13, 5 ili 0).
+- unit je UN/ECE kod: H87 za komad ili uslugu, KGM kg, MTR m, MTK m², LTR l, HUR sat, DAY dan, KWH kWh.
+- totalNet je ukupni iznos računa bez PDV-a, totalVat ukupni PDV, totalGross ukupni iznos s PDV-om. Prepiši ih s računa, ne računaj ih sam.
+- paid je true samo ako račun izričito kaže da je plaćen (kartica, gotovina, već uplaćeno).
+- Povratna naknada, ambalaža ili depozit (npr. „Povratna naknada 0,10”) upisuje se kao zasebna stavka s vat 0 i deposit true. totalNet je bez te naknade, a totalGross (iznos za platiti) je s njom.
+- Brojeve na mutnom ili razmazanom računu čitaj posebno pažljivo i provjeri da zbroj stavki odgovara otisnutim ukupnim iznosima.
+- Sve iznose prepiši TOČNO onako kako su otisnuti, na cent. Nikad ne zaokružuj i ne prilagođavaj (45,08 ostaje 45,08, a ne 45,09).
+- Ako račun ispisuje iznose stavki S PDV-om (bruto), upiši ih u gross točno kako su otisnuti, a net ostavi kako ga možeš izračunati. Ako ih ne ispisuje, gross je null.
+- kpd upiši samo ako je šifra otisnuta na računu, inače prazan string.
+- Najvažniji podaci su naziv dobavljača, ulica s kućnim brojem, mjesto, OIB, broj računa, datum računa i datum dospijeća, iznos bez PDV-a, PDV i ukupni iznos. Njih čitaj najpažljivije. Ništa ne izmišljaj. Ako podatak nije čitljiv ili ga nema, stavi prazan string, a za brojeve null.${hint ? '\n\nPAŽNJA: ' + hint : ''}`;
+  }
+  function xmlPreview(inv) {
+    let x;
+    try { x = buildXml(inv, buyerFor(inv), { attach: false }); } catch (e) { return 'Pregled nije dostupan.'; }
+    x = x.replace(/^<\?xml[^>]*\?>\s*/, '').replace(/<Invoice [^>]*>/, '<Invoice …>').replace(/<ext:UBLExtensions>[\s\S]*?<\/ext:UBLExtensions>/, '<ext:UBLExtensions>…</ext:UBLExtensions>');
+    let ind = 0; const out = [];
+    for (const t of x.replace(/>\s*</g, '>\n<').split('\n')) {
+      if (/^<\/[^>]+>$/.test(t)) { ind = Math.max(0, ind - 1); out.push('  '.repeat(ind) + t); }
+      else if (/^<[^\/!?][^>]*[^\/]>$/.test(t) && !t.includes('</')) { out.push('  '.repeat(ind) + t); ind++; }
+      else out.push('  '.repeat(ind) + t);
+    }
+    return out.map(l => esc(l).replace(/&lt;(\/?)([\w:.\-]+)((?: [\w:.\-]+=&quot;[^&]*?&quot;)*)(\/?)&gt;/g, (m, c, n, at, sl) =>
+      `<span class="d">&lt;${c}</span><span class="t">${n}</span>${at.replace(/ ([\w:.\-]+)=(&quot;[^&]*?&quot;)/g, ' <span class="a">$1</span>=<span class="v">$2</span>')}<span class="d">${sl}&gt;</span>`)).join('\n');
+  }
+  const queue = []; let running = 0;
+  function enqueue(inv) { inv.status = 'queued'; queue.push(inv.id); renderCard(inv); refreshChrome(); pump(); }
+  function pump() {
+    while (running < 2 && queue.length) {
+      const inv = byId(queue.shift()); if (!inv) continue;
+      running++; extract(inv).finally(() => { running--; pump(); });
+    }
+  }
+  async function extract(inv) {
+    inv.status = 'reading'; renderCard(inv); refreshChrome();
+    try {
+      const blobs = inv.pages.slice(0, S.maxImages).map(dataUrlToBlob);
+      const out = await S.sample.json(promptFor(inv), { images: blobs, cache: false });
+      const keepOpen = inv.open;
+      let nd = normalizeAI(out), mm = totalsMismatch(nd);
+      if (mm.length) {
+        try {
+          const t0 = computeTotals(nd);
+          const hint = `Prvo čitanje dalo je zbroj stavki neto ${fmt2(t0.net)}, PDV ${fmt2(t0.vat)}, ukupno ${fmt2(t0.gross)}, a to se NE slaže s iznosima otisnutima na računu (${mm.join(' ')}). Stavke koje si pročitao: ${nd.lines.map(l => `${l.name} = ${l.net}`).join('; ')}. Ponovno pročitaj svaku stavku i otisnute ukupne iznose, pogotovo mutne brojeve. Zbroj stavki mora odgovarati otisnutim iznosima.`;
+          const out2 = await S.sample.json(promptFor(inv, hint), { images: blobs, cache: false });
+          const nd2 = normalizeAI(out2);
+          if (totalsMismatch(nd2).length <= mm.length) nd = nd2;
+        } catch (e2) {}
+      }
+      inv.data = nd; applySuppliers(inv); inv.status = 'ready'; inv.err = ''; inv.open = keepOpen;
+    } catch (e) {
+      inv.status = 'error'; inv.err = errCopy(e && e.code);
+    }
+    renderCard(inv); refreshChrome(); store.put(inv);
+  }
+
+  /* ---------- dodavanje slika ---------- */
+  async function addFiles(files, targetId) {
+    for (const f of [...files]) {
+      let url; try { url = await compress(f); } catch (e) { toast('Slika se ne može otvoriti.'); continue; }
+      if (targetId) {
+        const inv = byId(targetId); if (!inv) continue;
+        inv.pages.push(url); renderCard(inv); store.put(inv);
+        toast('Stranica dodana. Pritisni „Pročitaj ponovno”.');
+        continue;
+      }
+      const inv = { id: newId(), pages: [url], status: 'ready', err: '', open: false, exported: false, buyerId: S.buyerId, seq: ++S.seq, data: blankData() };
+      S.invoices.push(inv); store.put(inv);
+      if (S.canRead) enqueue(inv);
+      else { inv.open = true; renderCard(inv); refreshChrome(); }
+    }
+  }
+  /* ---------- PDF s više računa ---------- */
+  const setPdf = t => { const n = $('#pdfNote'); n.hidden = !t; n.textContent = t || ''; };
+  async function renderPdf(file) {
+    const lib = window.pdfjsLib;
+    if (!lib) throw new Error('lib');
+    lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const n = Math.min(doc.numPages, 80), pages = [];
+    for (let i = 1; i <= n; i++) {
+      setPdf(`Pripremam stranicu ${i} od ${n}…`);
+      const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 });
+      const vp = pg.getViewport({ scale: Math.min(3, 1800 / Math.max(v0.width, v0.height)) });
+      const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      await pg.render({ canvasContext: ctx, viewport: vp }).promise;
+      pages.push(c.toDataURL('image/jpeg', 0.82));
+    }
+    return { pages, total: doc.numPages };
+  }
+  async function groupPages(pages) {
+    const n = pages.length, starts = new Array(n).fill(true);
+    const chunk = Math.min(S.maxImages - 1, 6);
+    if (chunk < 1) return starts;
+    for (let s = 1; s < n; s += chunk) {
+      const e = Math.min(n, s + chunk);
+      setPdf(`Razvrstavam stranice po računima (${Math.min(e, n)} od ${n})…`);
+      const imgs = [pages[s - 1], ...pages.slice(s, e)].map(dataUrlToBlob);
+      const first = s + 1, last = e;
+      const prompt = `Slike su uzastopne stranice jednog PDF-a sa skeniranim ili ispisanim računima. Prva slika je stranica ${s} i služi samo kao kontekst. Ostale slike su stranice ${first} do ${last}, redom.
+Za svaku od stranica ${first} do ${last} odredi je li to POČETAK NOVOG računa (newInvoice true) ili NASTAVAK računa s prethodne stranice (newInvoice false).
+Nastavak je stranica koja nema vlastito zaglavlje s brojem računa, nastavlja tablicu stavki ili piše npr. "stranica 2/3". Stranica s vlastitim brojem računa i podacima dobavljača je novi račun, čak i ako je od istog dobavljača.
+Vrati ISKLJUČIVO JSON polje: [{"page": ${first}, "newInvoice": true}, ...] s jednim zapisom za svaku od stranica ${first} do ${last}.`;
+      try {
+        const out = await S.sample.json(prompt, { images: imgs, modelTier: 'quick', cache: false });
+        (Array.isArray(out) ? out : []).forEach(o => { const p = Number(o && o.page); if (p >= first && p <= last) starts[p - 1] = o.newInvoice !== false; });
+      } catch (err) { /* nepoznato: svaka stranica ostaje zaseban račun */ }
+    }
+    return starts;
+  }
+  async function addPdf(file) {
+    let r;
+    try { setPdf(`Otvaram ${file.name}…`); r = await renderPdf(file); }
+    catch (e) { setPdf(''); toast('PDF se ne može otvoriti.'); return; }
+    const starts = S.canRead && r.pages.length > 1 ? await groupPages(r.pages) : r.pages.map(() => true);
+    const groups = [];
+    starts.forEach((st, i) => { if (st || !groups.length) groups.push([i]); else groups[groups.length - 1].push(i); });
+    groups.forEach(g => {
+      const inv = { id: newId(), pages: g.map(i => r.pages[i]), status: 'ready', err: '', open: false, exported: false, buyerId: S.buyerId, seq: ++S.seq, data: blankData() };
+      S.invoices.push(inv); store.put(inv);
+      if (S.canRead) enqueue(inv); else { renderCard(inv); }
+    });
+    refreshChrome();
+    setPdf('');
+    toast(`Pronađeno računa: ${groups.length}` + (r.total > r.pages.length ? ` (obrađeno prvih ${r.pages.length} stranica)` : ''));
+  }
+  $('#pdfIn').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) addPdf(f); });
+
+  let pageTarget = null;
+  $('#camIn').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  $('#galIn').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  $('#pageIn').addEventListener('change', e => { addFiles(e.target.files, pageTarget); e.target.value = ''; });
+
+  /* ---------- događaji na kartici ---------- */
+  listEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const li = b.closest('.card'), inv = byId(li.dataset.id); if (!inv) return;
+    const act = b.dataset.act;
+    if (act === 'toggle') { inv.open = !inv.open; renderCard(inv); if (!inv.open) li.scrollIntoView({ block: 'nearest' }); }
+    else if (act === 'view') openViewer(inv, +b.dataset.i);
+    else if (act === 'xml') { inv.showXml = !inv.showXml; renderCard(inv); }
+    else if (act === 'reconcile') { reconcile(inv.data); renderCard(inv); scheduleSave(inv); refreshChrome(); }
+    else if (act === 'addLine') { inv.data.vatAdj = {}; inv.data.lines.push(blankLine()); renderCard(inv); scheduleSave(inv); }
+    else if (act === 'delLine') { inv.data.vatAdj = {}; inv.data.lines.splice(+b.dataset.i, 1); renderCard(inv); scheduleSave(inv); refreshChrome(); }
+    else if (act === 'delPage') { inv.pages.splice(+b.dataset.i, 1); renderCard(inv); store.put(inv); }
+    else if (act === 'addPage') { pageTarget = inv.id; $('#pageIn').click(); }
+    else if (act === 'reread') { if (S.canRead) enqueue(inv); }
+    else if (act === 'remove') removeInvoices([inv]);
+  });
+  function onField(e) {
+    const t = e.target, path = t.dataset && t.dataset.f; if (!path) return;
+    const li = t.closest('.card'), inv = byId(li.dataset.id); if (!inv) return;
+    setPath(inv.data, path, t.type === 'checkbox' ? t.checked : t.value);
+    if (/^lines\./.test(path)) inv.data.vatAdj = {};
+    const m = /^lines\.(\d+)\.(qty|price|net)$/.exec(path);
+    if (m) {
+      const l = inv.data.lines[+m[1]];
+      if (m[2] === 'net') l.netManual = true;
+      else if (!l.netManual) {
+        const q = parseNum(l.qty), p = parseNum(l.price);
+        l.net = Number.isFinite(q) && Number.isFinite(p) ? numStr(r2(q * p)) : '';
+        const ni = li.querySelector(`[data-f="lines.${m[1]}.net"]`); if (ni) ni.value = l.net;
+      }
+    }
+    if (path === 'supplier.oib') t.value = inv.data.supplier.oib = t.value.replace(/\s/g, '');
+    if (path === 'supplier.oib' && /^\d{11}$/.test(inv.data.supplier.oib) && S.suppliers[inv.data.supplier.oib] && applySuppliers(inv)) { inv.exported = false; renderCard(inv); scheduleSave(inv); refreshChrome(); return; }
+    inv.exported = false;
+    refreshDerived(inv); scheduleSave(inv);
+  }
+  /* ---------- brisanje s mogućnošću poništavanja ---------- */
+  let pendingDel = null, delTimer;
+  function finalizeDelete() { clearTimeout(delTimer); if (pendingDel) { pendingDel.forEach(r => store.del(r.inv.id)); pendingDel = null; } }
+  function removeInvoices(list) {
+    finalizeDelete();
+    pendingDel = list.map(inv => ({ inv, idx: S.invoices.indexOf(inv) })).filter(r => r.idx >= 0);
+    pendingDel.forEach(r => { const li = listEl.querySelector(`[data-id="${r.inv.id}"]`); if (li) li.remove(); });
+    S.invoices = S.invoices.filter(i => !list.includes(i));
+    refreshChrome();
+    const n = pendingDel.length, snap = pendingDel;
+    delTimer = setTimeout(finalizeDelete, 7000);
+    toast(n === 1 ? 'Račun obrisan.' : `Obrisano računa: ${n}.`, 'Poništi', () => {
+      if (pendingDel !== snap) return;
+      clearTimeout(delTimer); pendingDel = null;
+      snap.sort((a, b) => a.idx - b.idx).forEach(r => S.invoices.splice(Math.min(r.idx, S.invoices.length), 0, r.inv));
+      renderAll();
+    });
+  }
+  let wipeT;
+  $('#btnWipe').addEventListener('click', e => {
+    const b = e.currentTarget;
+    if (b.dataset.arm === '1') { clearTimeout(wipeT); b.dataset.arm = ''; b.textContent = 'Obriši sve'; removeInvoices([...S.invoices]); return; }
+    b.dataset.arm = '1'; b.textContent = 'Dodirni ponovno za brisanje svih';
+    wipeT = setTimeout(() => { b.dataset.arm = ''; b.textContent = 'Obriši sve'; }, 4000);
+  });
+  listEl.addEventListener('input', onField);
+  listEl.addEventListener('change', e => { if (e.target.type === 'checkbox') onField(e); });
+
+  /* ---------- kupci: uređivanje i spremanje ---------- */
+  function saveBuyer() { lsSet('buyers', JSON.stringify(S.buyers)); lsSet('buyerId', S.buyerId); lsSet('attach', S.attach ? '1' : '0'); }
+  const BF = ['name', 'oib', 'zip', 'street', 'city'];
+  let draft = null, delArm;
+  const openSettings = open => { const p = $('#settings'); p.hidden = !open; $('#btnSettings').setAttribute('aria-expanded', String(open)); };
+  $('#btnSettings').addEventListener('click', () => openSettings($('#settings').hidden));
+  function draftState() {
+    const base = draft.isNew ? null : S.buyers.find(x => x.id === draft.id);
+    const dirty = draft.isNew ? BF.some(k => draft[k].trim()) : BF.some(k => String(base[k] || '') !== draft[k].trim());
+    const msgs = [];
+    if (!draft.name.trim()) msgs.push(['e', 'Upiši naziv tvrtke.']);
+    if (!/^\d{11}$/.test(draft.oib)) msgs.push(['e', 'OIB mora imati točno 11 znamenki.']);
+    else {
+      if (!oibValid(draft.oib)) msgs.push(['w', 'Kontrolna znamenka OIB-a nije ispravna. Provjeri ga.']);
+      const dup = S.buyers.find(x => x.oib === draft.oib && x.id !== draft.id);
+      if (dup) msgs.push(['w', `OIB već ima spremljen kupac: ${dup.name || '(bez naziva)'}.`]);
+    }
+    return { dirty, msgs, valid: !msgs.some(m => m[0] === 'e') };
+  }
+  function refreshDraft() {
+    if (!draft) return;
+    const st = draftState();
+    $('#bedMsg').innerHTML = (draft.isNew && !st.dirty ? [] : st.msgs).map(m => `<li class="${m[0]}">${esc(m[1])}</li>`).join('');
+    const pill = $('#bedPill'); pill.hidden = !st.dirty; pill.textContent = 'Nespremljeno';
+    $('#btnBuyerSave').disabled = !(st.dirty && st.valid);
+    $('#bedSaveLbl').textContent = st.dirty || draft.isNew ? 'Spremi kupca' : 'Spremljeno';
+  }
+  function openBuyerEd(isNew) {
+    const base = isNew ? { id: newId(), name: '', oib: '', street: '', zip: '', city: '', country: 'HR' } : S.buyer;
+    draft = { isNew, id: base.id, country: base.country || 'HR' };
+    BF.forEach(k => { draft[k] = base[k] || ''; $('#b-' + k).value = draft[k]; });
+    $('#bedTitle').textContent = isNew ? 'Novi kupac' : 'Uredi kupca';
+    $('#btnBuyerDel').hidden = isNew || S.buyers.length < 2;
+    $('#buyerEd').hidden = false; refreshDraft();
+    $('#buyerEd').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (isNew) $('#b-name').focus();
+  }
+  function closeBuyerEd() { draft = null; $('#buyerEd').hidden = true; }
+  $('#buyerEd').addEventListener('input', e => {
+    const k = e.target.dataset && e.target.dataset.b; if (!k || !draft) return;
+    let v = e.target.value;
+    if (k === 'oib') { v = v.replace(/\D/g, '').slice(0, 11); if (v !== e.target.value) e.target.value = v; }
+    draft[k] = v; refreshDraft();
+  });
+  $('#btnBuyerNew').addEventListener('click', () => openBuyerEd(true));
+  $('#btnBuyerEdit').addEventListener('click', () => openBuyerEd(false));
+  $('#btnBuyerCancel').addEventListener('click', closeBuyerEd);
+  $('#btnBuyerSave').addEventListener('click', () => {
+    if (!draft) return; const st = draftState(); if (!st.dirty || !st.valid) return;
+    const clean = { id: draft.id, country: draft.country };
+    BF.forEach(k => { clean[k] = draft[k].trim(); });
+    const i = S.buyers.findIndex(x => x.id === clean.id);
+    if (i >= 0) S.buyers[i] = clean; else S.buyers.push(clean);
+    S.buyerId = clean.id; S.buyer = clean; saveBuyer(); renderBuyers();
+    S.invoices.forEach(inv => { if (buyerFor(inv).id === clean.id) refreshDerived(inv); });
+    closeBuyerEd(); toast('Kupac spremljen: ' + clean.name);
+  });
+  $('#buyerSel').addEventListener('change', e => {
+    S.buyerId = e.target.value; S.buyer = S.buyers.find(b => b.id === S.buyerId); saveBuyer(); renderBuyers(); closeBuyerEd();
+  });
+  $('#btnBuyerDel').addEventListener('click', e => {
+    const b = e.currentTarget;
+    if (S.buyers.length < 2 || !draft || draft.isNew) return;
+    if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Dodirni ponovno za brisanje'; delArm = setTimeout(() => { b.dataset.arm = ''; b.textContent = 'Obriši kupca'; }, 4000); return; }
+    clearTimeout(delArm); b.dataset.arm = ''; b.textContent = 'Obriši kupca';
+    const gone = S.buyerId; S.buyers = S.buyers.filter(x => x.id !== gone);
+    S.buyerId = S.buyers[0].id; S.buyer = S.buyers[0];
+    S.invoices.forEach(inv => { if (inv.buyerId === gone) { inv.buyerId = S.buyerId; store.put(inv); } });
+    saveBuyer(); renderBuyers(); closeBuyerEd(); renderAll();
+  });
+  listEl.addEventListener('change', e => {
+    const t = e.target; if (!t.dataset || !t.dataset.buyer) return;
+    const inv = byId(t.closest('.card').dataset.id); if (!inv) return;
+    inv.buyerId = t.value; inv.exported = false; refreshDerived(inv); scheduleSave(inv);
+  });
+  $('#b-enhance').addEventListener('change', e => { S.enhance = e.target.checked; lsSet('enhance', S.enhance ? '1' : '0'); });
+  let supArm;
+  $('#btnSupClear').addEventListener('click', e => {
+    const b = e.currentTarget;
+    if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Dodirni ponovno za brisanje'; supArm = setTimeout(() => { b.dataset.arm = ''; b.textContent = 'Zaboravi dobavljače'; }, 4000); return; }
+    clearTimeout(supArm); b.dataset.arm = ''; b.textContent = 'Zaboravi dobavljače';
+    S.suppliers = {}; S.exportedSet = new Set(); saveSuppliers(); saveExportedKeys(); updSupCnt(); refreshChrome();
+  });
+  $('#b-attach').addEventListener('change', e => { S.attach = e.target.checked; saveBuyer(); });
+
+  /* ---------- izvoz ---------- */
+  $('#btnClear').addEventListener('click', () => {
+    S.invoices.filter(i => i.exported).forEach(i => store.del(i.id));
+    S.invoices = S.invoices.filter(i => !i.exported); renderAll();
+  });
+  $('#btnExport').addEventListener('click', async () => {
+    const btn = $('#btnExport'); const ready = S.invoices.filter(isExportable); if (!ready.length) return;
+    btn.disabled = true;
+    try {
+      if (typeof JSZip === 'undefined') throw { code: 'zip' };
+      const dl = await claude.use('downloads');
+      if (!dl) throw { code: 'unavailable' };
+      const zip = new JSZip(), used = new Set();
+      const counters = new Map();
+      const multi = new Set(ready.map(i => buyerFor(i).id)).size > 1;
+      for (const inv of ready) {
+        const b = buyerFor(inv), dir = multi ? (cleanName(b.name) || 'kupac') + '/' : '';
+        const num = (counters.get(dir) || 0) + 1; counters.set(dir, num);
+        const base = String(num).padStart(3, '0') + '-' + fileNameFor(inv);
+        let name = dir + base, n = 2;
+        while (used.has(name)) name = (dir + base).replace(/\.xml$/, `-${n++}.xml`);
+        used.add(name);
+        zip.file(name, buildXml(inv, b, { attach: S.attach }));
+      }
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      const now = new Date(), p2 = x => String(x).padStart(2, '0');
+      const only = multi ? '' : '-' + (cleanName(buyerFor(ready[0]).name) || 'racuni');
+      const fn = `racuni${only}-${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}-${p2(now.getHours())}${p2(now.getMinutes())}.zip`;
+      const res = await dl.save({ filename: fn, data: blob });
+      ready.forEach(i => { rememberSupplier(i); const k = invKey(i); if (k) S.exportedSet.add(k); });
+      saveSuppliers(); saveExportedKeys(); updSupCnt();
+      ready.forEach(i => { i.exported = true; store.put(i); renderCard(i); });
+      refreshChrome(); if (!res || res.status !== 'pending') toast(`Spremljeno ${ready.length} XML-a u ${fn}`);
+    } catch (e) {
+      const c = e && e.code;
+      if (c === 'declined') toast('Spremanje je otkazano.');
+      else if (c === 'zip') toast('Biblioteka za ZIP se nije učitala. Osvježi stranicu.');
+      else if (c === 'unavailable' || c === 'not_granted' || c === 'capability_disabled') toast('Spremanje datoteka nije dostupno u ovom prikazu.');
+      else toast('Izvoz nije uspio. Pokušaj ponovno.');
+    } finally { refreshChrome(); }
+  });
+
+  /* ---------- čitanje: dostupnost ---------- */
+  async function detectAI() {
+    S.canRead = false; S.sample = null;
+    try {
+      const sm = await claude.use('sample');
+      const lim = sm && await sm.limits().catch(() => null);
+      if (lim && lim.images) { S.sample = sm; S.canRead = true; S.maxImages = lim.images.maxCount || 3; }
+    } catch (e) {}
+    const n = $('#aiNote');
+    n.hidden = S.canRead;
+    n.textContent = STANDALONE ? 'Za automatsko čitanje računa upiši Anthropic API ključ u Postavkama. Bez njega podatke možeš upisati ručno.' : 'Automatsko čitanje slika nije dostupno u ovom prikazu. Otvori stranicu u Claude aplikaciji ili podatke upiši ručno.';
+    refreshChrome();
+  }
+  $('#k-key').addEventListener('input', e => { lsSet('apikey', e.target.value.trim()); detectAI(); });
+  $('#k-model').addEventListener('input', e => lsSet('model', e.target.value.trim()));
+
+  /* ---------- pokretanje ---------- */
+  (async function init() {
+    loadBuyers(); loadSuppliers(); updSupCnt();
+    S.attach = lsGet('attach') !== '0'; S.enhance = lsGet('enhance') !== '0';
+    renderBuyers();
+    $('#b-attach').checked = S.attach; $('#b-enhance').checked = S.enhance;
+    $('#k-key').value = lsGet('apikey') || ''; $('#k-model').value = lsGet('model') || 'claude-sonnet-5-5';
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    await store.open();
+    const saved = await store.all();
+    saved.sort((a, b) => ((a.seq || 0) - (b.seq || 0)) || (a.id < b.id ? -1 : 1)).forEach(inv => {
+      if (inv.status === 'reading' || inv.status === 'queued') { inv.status = 'error'; inv.err = 'Čitanje je prekinuto.'; }
+      inv.open = false; inv.showXml = false; S.invoices.push(inv);
+    });
+    S.invoices.forEach((inv, i) => { if (!inv.seq) { inv.seq = i + 1; store.put(inv); } });
+    S.seq = S.invoices.reduce((m, i) => Math.max(m, i.seq || 0), 0);
+    renderAll();
+    await detectAI();
+    if (!S.canRead && !lsGet('apikey')) openSettings(true);
+    refreshChrome();
+  })();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
